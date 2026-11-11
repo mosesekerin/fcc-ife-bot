@@ -1,0 +1,16 @@
+{
+  "name": "fcc-ife-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp bot for Fullness of Christ Church, Ile-Ife (Cloudflare Worker)",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --test-scheduled",
+    "tail": "wrangler tail"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "wrangler": "^4.160.0"
+  },
+  "private": true
+}

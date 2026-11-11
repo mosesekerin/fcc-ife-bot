@@ -1,0 +1,104 @@
+# FCC Ife Bot — Cloudflare Worker config
+# The Worker's address (https://fcc-ife-bot.<your-subdomain>.workers.dev) is printed
+# on every sticker QR. Never rename `name` after stickers are printed.
+
+name = "fcc-ife-bot"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+preview_urls = false
+
+# Images for messages and link previews: files in ./public are served at the same address,
+# e.g. public/img/welcome.jpg -> https://<worker>.workers.dev/img/welcome.jpg
+[assets]
+directory = "./public"
+
+# Follow-ups are sent by this cron, every minute
+[triggers]
+crons = ["* * * * *"]
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "fcc-ife-bot"
+database_id = "set-by-deploy-workflow"  # the deploy workflow finds (or creates) the database and fills this in
+
+# Secrets are NOT here. Set them with:
+# They live in GitHub (repo Settings > Secrets > Actions) and the deploy workflow copies
+# them into Cloudflare: VERIFY_TOKEN, APP_SECRET, ACCESS_TOKEN, ADMIN_NUMBERS.
+
+[vars]
+PHONE_NUMBER_ID = "1356832454189968"   # Meta > WhatsApp > API Setup (under "From")
+GRAPH_VERSION   = "v23.0"
+
+# Numbers in international format, no + or spaces
+ANSWERS_LINE_NUMBER = "15551399198"      # the bot's number (Meta test number for now, real SIM later)
+MAIN_LINE_NUMBER    = "2348118466251"    # church phone on WhatsApp Business app
+MAIN_LINE_DISPLAY   = "0811 846 6251"    # how people should save it
+PRIVACY_CONTACT     = "fullnessife@gmail.com"  # shown on /privacy
+
+ANSWERS_LINK = "https://plerose.org/purpose"
+CHANNEL_LINK = "https://whatsapp.com/channel/XXXXXXXX"
+
+FOLLOWUP_DELAY_SECONDS = 60    # TESTING. Set to 900 (15 min) when the real number goes live
+HANDOFF_COOLDOWN_HOURS = 12
+
+# Location tags (tag = place). Never rename a tag after its stickers are printed.
+TAGS = { ANG = "Angola Hall", MOZ = "Mozambique Hall" }
+# Later: ETF = "ETF Hall", AWL = "Awolowo Hall", FAJ = "Fajuyi Hall", AKT = "Akintola Hall", ALM = "Alumni Hall"
+
+# ---- Pictures --------------------------------------------------------------------
+# Full https URLs. Leave "" to send plain text instead. JPG or PNG, max 5 MB.
+# The message text below becomes the caption under the picture (max 1024 characters).
+WELCOME_IMAGE  = "https://fcc-ife-bot.fullnessife.workers.dev/img/welcome.jpg"
+FOLLOWUP_IMAGE = "https://fcc-ife-bot.fullnessife.workers.dev/img/followup.jpg"
+
+# Preview card shown when a sticker link (/go/...) is shared in a chat
+SHARE_IMAGE       = "https://fcc-ife-bot.fullnessife.workers.dev/img/share.jpg"
+SHARE_TITLE       = "Ever wondered why you exist?"
+SHARE_DESCRIPTION = "Find answers with Fullness of Christ Church, Ile-Ife."
+
+# Optional: a different answer link for a tag (future question campaigns)
+ANSWERS_LINKS = {}
+
+# ---- Messages ----------------------------------------------------------------
+PREFILLED_MESSAGE = 'Hi Fullness of Christ Church, I saw the question "Ever wondered why you exist?" and I would like to find the answer. (ref {tag})'
+
+HELLO_MESSAGE = "Hi FCC Ife, I just saved your number (ref {tag})"
+
+WELCOME_MESSAGE = '''
+Welcome to Fullness of Christ Church, Ile-Ife. We're glad you asked.
+
+Why do you exist? It may be the most important question you'll ever ask, and God's word has a clear answer.
+
+Start here. Episode 1 takes about 2 minutes:
+{link}
+
+Take your time. We'll check on you in a few minutes.
+'''
+
+FOLLOWUP_MESSAGE = '''
+We hope the answers blessed you. This question is only the beginning.
+
+1. Save our main number, {main_number}, as "Fullness of Christ Church Ife". You'll see our daily questions and videos on status.
+
+2. Then say hi so we can save you too (one tap):
+{main_link}
+
+3. Follow our channel for more questions like this one:
+{channel_link}
+
+Join us this week:
+Monday 5:30 PM, Sports Complex
+Friday 6:00 PM, SUB TV Room
+Sunday 8:00 AM, Former Indigo, Odudua Estate
+'''
+
+HANDOFF_MESSAGE = '''
+Thanks for your message! This line sends answers automatically.
+
+To talk with a real person from our team, message us here:
+{main_link}
+'''

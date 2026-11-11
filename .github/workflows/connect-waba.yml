@@ -1,0 +1,26 @@
+name: Connect WhatsApp account
+
+# Run once after registering a phone number: links its WhatsApp Business Account
+# to the Meta app so incoming messages are forwarded to the bot.
+on:
+  workflow_dispatch:
+    inputs:
+      waba_id:
+        description: "WhatsApp Business Account ID (from Meta > WhatsApp > API Setup)"
+        required: true
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Subscribe app to the WhatsApp Business Account
+        env:
+          TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          WABA_ID: ${{ inputs.waba_id }}
+          GRAPH: https://graph.facebook.com/v23.0
+        run: |
+          echo "Subscribing..."
+          curl -sS -X POST "$GRAPH/$WABA_ID/subscribed_apps" -H "Authorization: Bearer $TOKEN" | tee /tmp/r.json; echo
+          grep -q '"success":true' /tmp/r.json
+          echo "Apps now subscribed:"
+          curl -sS "$GRAPH/$WABA_ID/subscribed_apps" -H "Authorization: Bearer $TOKEN" | jq '.data[].whatsapp_business_api_data.name'

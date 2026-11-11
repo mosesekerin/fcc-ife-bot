@@ -1,0 +1,5 @@
+# Local testing only (npx wrangler dev). Real secrets live in GitHub Actions secrets.
+VERIFY_TOKEN=local-test-token
+APP_SECRET=local-test-secret
+ACCESS_TOKEN=local-test-token
+ADMIN_NUMBERS=2348000000000

@@ -1,0 +1,104 @@
+name: Deploy
+
+# Every push to main (e.g. a merged pull request) checks the code and deploys it to
+# Cloudflare. Pull requests only run the checks. Can also be run by hand from the
+# Actions tab, e.g. after changing a secret.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  DB_NAME: fcc-ife-bot
+  WORKER_URL: https://fcc-ife-bot.fullnessife.workers.dev
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Syntax check
+        run: node --check src/index.js
+      - name: Build check (nothing is uploaded)
+        run: npx wrangler deploy --dry-run --outdir /tmp/build
+
+  deploy:
+    needs: check
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Check required secrets
+        env:
+          META_VERIFY_TOKEN: ${{ secrets.META_VERIFY_TOKEN }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+        run: |
+          missing=0
+          for v in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID META_VERIFY_TOKEN META_APP_SECRET META_ACCESS_TOKEN; do
+            if [ -z "${!v}" ]; then echo "::error::GitHub secret $v is not set (repo Settings > Secrets and variables > Actions)"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Find or create the database
+        run: |
+          id=$(npx wrangler d1 list --json | jq -r --arg n "$DB_NAME" '.[] | select(.name == $n) | .uuid')
+          if [ -z "$id" ]; then
+            echo "Creating D1 database $DB_NAME"
+            npx wrangler d1 create "$DB_NAME"
+            id=$(npx wrangler d1 list --json | jq -r --arg n "$DB_NAME" '.[] | select(.name == $n) | .uuid')
+          fi
+          echo "Database id: $id"
+          sed -i "s/^database_id = .*/database_id = \"$id\"/" wrangler.toml
+
+      - name: Create database tables (safe to repeat)
+        run: |
+          SQL=$(sed -e 's/--.*$//' schema.sql | tr '\n' ' ')
+          npx wrangler d1 execute "$DB_NAME" --remote --yes --command="$SQL"
+
+      - name: Deploy Worker
+        run: npx wrangler deploy
+
+      - name: Copy secrets into Cloudflare
+        env:
+          META_VERIFY_TOKEN: ${{ secrets.META_VERIFY_TOKEN }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          ADMIN_NUMBERS: ${{ secrets.ADMIN_NUMBERS }}
+        run: |
+          jq -n --arg v "$META_VERIFY_TOKEN" --arg s "$META_APP_SECRET" --arg t "$META_ACCESS_TOKEN" --arg a "$ADMIN_NUMBERS" \
+            '{VERIFY_TOKEN: $v, APP_SECRET: $s, ACCESS_TOKEN: $t, ADMIN_NUMBERS: $a}' > /tmp/secrets.json
+          npx wrangler secret bulk /tmp/secrets.json
+          rm -f /tmp/secrets.json
+
+      - name: Smoke test
+        run: |
+          sleep 5
+          for path in /privacy /img/welcome.jpg; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$WORKER_URL$path")
+            echo "$path -> HTTP $code"
+            test "$code" = "200"
+          done
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$WORKER_URL/go/ang")
+          echo "/go/ang -> HTTP $code (302 expected)"
+          test "$code" = "302"
