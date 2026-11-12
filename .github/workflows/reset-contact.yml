@@ -22,6 +22,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Find the database
+        run: |
+          id=$(npx wrangler d1 list --json | jq -r '.[] | select(.name == "fcc-ife-bot") | .uuid')
+          test -n "$id" || { echo "::error::Database fcc-ife-bot not found"; exit 1; }
+          sed -i "s/^database_id = .*/database_id = \"$id\"/" wrangler.toml
       - name: Delete the contact and any pending follow-up
         run: |
           case "$NUMBER" in (*[!0-9]*|"") echo "::error::Digits only, e.g. 2348133732181"; exit 1;; esac
