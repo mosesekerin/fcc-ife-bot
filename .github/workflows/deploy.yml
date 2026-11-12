@@ -94,7 +94,7 @@ jobs:
       - name: Smoke test
         run: |
           sleep 5
-          for path in /privacy /img/welcome.jpg; do
+          for path in /privacy /img/welcome.jpg /img/followup.jpg /video/welcome.mp4; do
             code=$(curl -s -o /dev/null -w "%{http_code}" "$WORKER_URL$path")
             echo "$path -> HTTP $code"
             test "$code" = "200"

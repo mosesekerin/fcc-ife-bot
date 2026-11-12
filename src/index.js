@@ -146,7 +146,8 @@ async function onIncoming(env, sender, name, text) {
     await env.DB.prepare("INSERT INTO followups (wa_id, name, tag, due_at) VALUES (?, ?, ?, ?)")
       .bind(sender, name || "", tag, now + delaySeconds(env)).run();
     const link = (env.ANSWERS_LINKS || {})[tag] || env.ANSWERS_LINK;
-    await sendMessage(env, sender, fill(env.WELCOME_MESSAGE, { name, link, tag }), env.WELCOME_IMAGE);
+    await sendMessage(env, sender, fill(env.WELCOME_MESSAGE, { name, link, tag }),
+      { video: env.WELCOME_VIDEO, image: env.WELCOME_IMAGE });
     return;
   }
 
@@ -172,12 +173,16 @@ async function sendDueFollowups(env) {
 
   for (const f of results) {
     try {
-      await sendMessage(env, f.wa_id, fill(env.FOLLOWUP_MESSAGE, {
+      const values = {
         name: f.name,
         main_number: env.MAIN_LINE_DISPLAY,
         main_link: mainLineLink(env, f.tag),
         channel_link: env.CHANNEL_LINK || "",
-      }), env.FOLLOWUP_IMAGE);
+      };
+      let body = fill(env.FOLLOWUP_MESSAGE, values);
+      // The channel invitation is only added once a channel link is configured
+      if (env.CHANNEL_LINK && env.FOLLOWUP_CHANNEL_BLOCK) body += "\n\n" + fill(env.FOLLOWUP_CHANNEL_BLOCK, values);
+      await sendMessage(env, f.wa_id, body, { image: env.FOLLOWUP_IMAGE });
       await env.DB.prepare("UPDATE followups SET sent_at = ?, attempts = attempts + 1 WHERE id = ?")
         .bind(nowSeconds(), f.id).run();
       await bump(env, f.tag, "followups");
@@ -308,18 +313,21 @@ async function signatureOk(secret, raw, header) {
   return diff === 0;
 }
 
-const CAPTION_LIMIT = 1024; // WhatsApp's maximum image caption length
+const CAPTION_LIMIT = 1024; // WhatsApp's maximum media caption length
 
-// Sends a picture with the text as its caption when imageUrl is set (and the text fits),
-// otherwise plain text. If the picture is rejected (bad URL, wrong format), falls back to text
-// so the person still gets the message.
-async function sendMessage(env, to, body, imageUrl) {
-  if (imageUrl && body.length <= CAPTION_LIMIT) {
-    try {
-      return await graphSend(env, { messaging_product: "whatsapp", to, type: "image", image: { link: imageUrl, caption: body } });
-    } catch (e) {
-      if (String(e).includes(" 401 ")) throw e; // bad token: text would fail too
-      console.log("Image send failed, falling back to text:", String(e));
+// Sends the text as the caption of a video (preferred) or picture, falling back step by step
+// (video -> picture -> plain text) so the person always gets the message.
+async function sendMessage(env, to, body, media = {}) {
+  if (body.length <= CAPTION_LIMIT) {
+    for (const type of ["video", "image"]) {
+      const link = media[type];
+      if (!link) continue;
+      try {
+        return await graphSend(env, { messaging_product: "whatsapp", to, type, [type]: { link, caption: body } });
+      } catch (e) {
+        if (String(e).includes(" 401 ")) throw e; // bad token: nothing else will work either
+        console.log(`${type} send failed, trying the next option:`, String(e));
+      }
     }
   }
   return sendText(env, to, body);

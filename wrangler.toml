@@ -40,20 +40,21 @@ MAIN_LINE_DISPLAY   = "0811 846 6251"    # how people should save it
 PRIVACY_CONTACT     = "fullnessife@gmail.com"  # shown on /privacy
 
 ANSWERS_LINK = "https://pleros.org/purpose"
-CHANNEL_LINK = "https://whatsapp.com/channel/XXXXXXXX"
+CHANNEL_LINK = ""   # the channel invitation is added to the follow-up once this is set
 
-FOLLOWUP_DELAY_SECONDS = 60    # TESTING. Set to 900 (15 min) when the real number goes live
+FOLLOWUP_DELAY_SECONDS = 300   # 5 min: enough to watch the film and episode 1
 HANDOFF_COOLDOWN_HOURS = 12
 
 # Location tags (tag = place). Never rename a tag after its stickers are printed.
 TAGS = { ANG = "Angola Hall", MOZ = "Mozambique Hall" }
 # Later: ETF = "ETF Hall", AWL = "Awolowo Hall", FAJ = "Fajuyi Hall", AKT = "Akintola Hall", ALM = "Alumni Hall"
 
-# ---- Pictures --------------------------------------------------------------------
-# Full https URLs. Leave "" to send plain text instead. JPG or PNG, max 5 MB.
-# The message text below becomes the caption under the picture (max 1024 characters).
+# ---- Video and pictures ------------------------------------------------------------
+# Full https URLs. Leave "" to skip. Video: MP4 (H.264 + AAC), max 16 MB. Pictures: JPG/PNG, max 5 MB.
+# The message text becomes the caption (max 1024 characters). Change ?v= when replacing a file.
+WELCOME_VIDEO  = "https://fcc-ife-bot.fullnessife.workers.dev/video/welcome.mp4?v=1"
 WELCOME_IMAGE  = "https://fcc-ife-bot.fullnessife.workers.dev/img/welcome.jpg?v=2"
-FOLLOWUP_IMAGE = "https://fcc-ife-bot.fullnessife.workers.dev/img/followup.jpg"
+FOLLOWUP_IMAGE = "https://fcc-ife-bot.fullnessife.workers.dev/img/followup.jpg?v=2"
 
 # Preview card shown when a sticker link (/go/...) is shared in a chat
 SHARE_IMAGE       = "https://fcc-ife-bot.fullnessife.workers.dev/img/share.jpg"
@@ -66,39 +67,35 @@ ANSWERS_LINKS = {}
 # ---- Messages ----------------------------------------------------------------
 PREFILLED_MESSAGE = 'Hi Fullness of Christ Church, I saw the question "Ever wondered why you exist?" and I would like to find the answer. (ref {tag})'
 
-HELLO_MESSAGE = "Hi FCC Ife, I just saved your number (ref {tag})"
+HELLO_MESSAGE = "I just started the purpose series and I'd like to talk (ref {tag})"
 
 WELCOME_MESSAGE = '''
-Welcome to Fullness of Christ Church, Ile-Ife. We're glad you asked.
+Welcome to Fullness of Christ Church, Ile-Ife.
 
-Why do you exist? It may be the most important question you'll ever ask, and God's word has a clear answer.
+Family, friends, feelings, the world: everyone has a route for you. But you didn't scan that sticker by accident. Somewhere in you, the real question is already alive.
 
-Start here. Episode 1 takes about 2 minutes:
+The One who made the road has not hidden where it leads. Start the series here, 7 short episodes of about 2 minutes each:
 {link}
 
-Take your time. We'll check on you in a few minutes.
+Take your time with episode 1. We'll check on you shortly.
 '''
 
 FOLLOWUP_MESSAGE = '''
-We hope the answers blessed you. This question is only the beginning.
+How did episode 1 sit with you?
 
-1. Save our main number, {main_number}, as "Fullness of Christ Church Ife". You'll see our daily questions and videos on status.
+Questions like this aren't meant to be carried alone. Some people finish it at peace, some with more questions, some unsettled. All of that is welcome.
 
-2. Then say hi so we can save you too (one tap):
+If something stirred in you, there's a real person on our team who would love to hear it. Just a conversation:
 {main_link}
+'''
 
-3. Follow our channel for more questions like this one:
+# Added to the follow-up only when CHANNEL_LINK is set
+FOLLOWUP_CHANNEL_BLOCK = '''
+And if you'd like to keep asking: our channel is for the questions most people are too busy, or too afraid, to ask. Every truth you'll ever find starts with one.
 {channel_link}
-
-Join us this week:
-Monday 5:30 PM, Sports Complex
-Friday 6:00 PM, SUB TV Room
-Sunday 8:00 AM, Former Indigo, Odudua Estate
 '''
 
 HANDOFF_MESSAGE = '''
-Thanks for your message! This line sends answers automatically.
-
-To talk with a real person from our team, message us here:
+This line only shares the series. For a real conversation, our team is here:
 {main_link}
 '''
