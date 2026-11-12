@@ -46,7 +46,7 @@ FOLLOWUP_DELAY_SECONDS = 300   # 5 min: enough to watch the film and episode 1
 HANDOFF_COOLDOWN_HOURS = 12
 
 # Location tags (tag = place). Never rename a tag after its stickers are printed.
-TAGS = { ANG = "Angola Hall", MOZ = "Mozambique Hall" }
+TAGS = { ANG = "Angola Hall", MOZ = "Mozambique Hall", FLY = "Flyers", BAN = "Banners" }
 # Later: ETF = "ETF Hall", AWL = "Awolowo Hall", FAJ = "Fajuyi Hall", AKT = "Akintola Hall", ALM = "Alumni Hall"
 
 # ---- Video and pictures ------------------------------------------------------------
